@@ -19,23 +19,20 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
     }
 
     func value(for key: Key) -> Any?? {
-        // TODO: Consider other strategies:
-        // 1. elements only
-        // 2. attributes only
-        // 3. elements, then attributes
-        // 4. attributes, then elements
 
         let decodingKey: String
+
         switch decoder.keyDecodingStrategy {
         case .useDefaultKeys:
             decodingKey = key.stringValue
         case .capitalized:
             decodingKey = key.stringValue.capitalized
         case .convertFromSnakeCase:
-            // TODO: Implement me
             decodingKey = key.stringValue.snakecased()
         case .custom(let block):
-            decodingKey = block(codingPath + [key]).stringValue
+            var codingPath = self.codingPath
+            codingPath.append(key)
+            decodingKey = block(codingPath).stringValue
         }
 
         return value[decodingKey]
@@ -91,110 +88,123 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
         fatalError("\(#function)")
     }
 
-    func decodeIfPresent(_ type: Int.Type, forKey key: Key) throws -> Int? {
-        if try decodeNil(forKey: key) {
+    // MARK: - Integer decoding
+
+    private func decodeIntegerIfPresent<T: FixedWidthInteger>(_ type: T.Type, forKey key: Key) throws -> T? {
+//        if try decodeNil(forKey: key) {
+//            return nil
+//        }
+
+        guard let value = value(for: key), value != nil else {
             return nil
         }
 
-        guard let value = value(for: key) else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.keyNotFound(key, context)
-        }
-
-        if let intValue = value as? Int {
+        if let intValue = value as? T {
             return intValue
         } else if let stringValue = value as? String {
 
-            if let intValue = Int(stringValue) {
+            if let intValue = T(stringValue) {
                 return intValue
             } else if let doubleValue = Double(stringValue) {
-
-                if let intValue = Int(exactly: doubleValue) {
-                    return intValue
-                } else {
-                    return nil
-                }
+                return T(exactly: doubleValue)
             } else {
                 return nil
             }
         } else {
             return nil
         }
-
     }
-    func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
-        if let intValue = try decodeIfPresent(type, forKey: key) {
+
+    private func decodeInteger<T: FixedWidthInteger & Decodable>(_ type: T.Type, forKey key: Key) throws -> T {
+        if let intValue = try decodeIntegerIfPresent(type, forKey: key) {
             return intValue
         } else {
             let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
             throw DecodingError.typeMismatch(type, context)
         }
-//        guard let value = value(for: key) else {
-//            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-//            throw DecodingError.keyNotFound(key, context)
-//        }
-//
-//        if let intValue = value as? Int {
-//            return intValue
-//        } else if let stringValue = value as? String {
-//
-//            if let intValue = Int(stringValue) {
-//                return intValue
-//            } else if let doubleValue = Double(stringValue) {
-//
-//                if let intValue = Int(exactly: doubleValue) {
-//                    return intValue
-//                } else {
-//                    let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-//                    throw DecodingError.valueNotFound(type, context)
-//                }
-//            } else {
-//                let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-//                throw DecodingError.typeMismatch(type, context)
-//            }
-//        } else if let doubleValue = value as? Double {
-//
-//        } else {
-//            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-//            throw DecodingError.typeMismatch(type, context)
-//        }
+    }
+
+    func decodeIfPresent(_ type: Int.Type, forKey key: Key) throws -> Int? {
+        try decodeIntegerIfPresent(type, forKey: key)
+    }
+
+    func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: Int8.Type, forKey key: Key) throws -> Int8? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: Int16.Type, forKey key: Key) throws -> Int16? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: Int32.Type, forKey key: Key) throws -> Int32? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: Int64.Type, forKey key: Key) throws -> Int64? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: UInt.Type, forKey key: Key) throws -> UInt? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: UInt8.Type, forKey key: Key) throws -> UInt8? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: UInt16.Type, forKey key: Key) throws -> UInt16? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: UInt32.Type, forKey key: Key) throws -> UInt32? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
+    }
+
+    func decodeIfPresent(_ type: UInt64.Type, forKey key: Key) throws -> UInt64? {
+        try decodeIntegerIfPresent(type, forKey: key)
     }
 
     func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
-        fatalError("\(#function)")
+        try decodeInteger(type, forKey: key)
     }
+
+    // MARK: - Other decoding
 
     func decode<T: Collection & Decodable>(_ type: T.Type, forKey key: Key) throws -> T where T.Element: Decodable {
         fatalError("\(#function)")

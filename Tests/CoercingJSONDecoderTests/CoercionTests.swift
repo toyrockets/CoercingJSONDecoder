@@ -11,6 +11,10 @@ final class CoercionTests: XCTestCase {
             let four: Int?
             let five: Int?
             let six: Int?
+            let seven: Int?
+            let eight: Int?
+            let nine: Int?
+            let ten: Int?
         }
 
         let json = """
@@ -19,8 +23,12 @@ final class CoercionTests: XCTestCase {
             "two": "2",
             "three": 3.0,
             "four": 3.1,
-            "five": true,
-            "six": []
+            "five": "3.0",
+            "six": "3.1",
+            "seven": true,
+            "eight": "invalid",
+            "nine": [],
+            "ten": {}
         }
         """
 
@@ -33,8 +41,12 @@ final class CoercionTests: XCTestCase {
         XCTAssertEqual(result.two, 2)
         XCTAssertEqual(result.three, 3)
         XCTAssertEqual(result.four, nil)
-        XCTAssertEqual(result.five, 1)
+        XCTAssertEqual(result.five, 3)
         XCTAssertEqual(result.six, nil)
+        XCTAssertEqual(result.seven, 1)
+        XCTAssertEqual(result.eight, nil)
+        XCTAssertEqual(result.nine, nil)
+        XCTAssertEqual(result.ten, nil)
     }
 
     func testDoubleCoercion() {

@@ -123,18 +123,70 @@ final class DictionaryTests: XCTestCase {
 
     func testIntegers() {
         struct TestStruct: Decodable, Equatable {
-            let one: Int
+            let int: Int
+            let int8: Int8
+            let int16: Int16
+            let int32: Int32
+            let int64: Int64
+            let uint: UInt
+            let uint8: UInt8
+            let uint16: UInt16
+            let uint32: UInt32
+            let uint64: UInt64
         }
 
         let json = """
         {
-            "one": 1
+            "int": 1,
+            "int8": 1,
+            "int16": 1,
+            "int32": 1,
+            "int64": 1,
+            "uint": 1,
+            "uint8": 1,
+            "uint16": 1,
+            "uint32": 1,
+            "uint64": 1
         }
         """
 
-        runTestWithDecoder(CoercingJSONDecoder(), json: json, type: TestStruct.self)
-        runTestWithDecoder(JSONDecoder(), json: json, type: TestStruct.self)
+        let result1 = runTestWithDecoder(CoercingJSONDecoder(), json: json, type: TestStruct.self)
+        let result2 = runTestWithDecoder(JSONDecoder(), json: json, type: TestStruct.self)
+        XCTAssertEqual(result1, result2)
+    }
 
+    func testOptionalIntegers() {
+        struct TestStruct: Decodable, Equatable {
+            let int: Int?
+            let int8: Int8?
+            let int16: Int16?
+            let int32: Int32?
+            let int64: Int64?
+            let uint: UInt?
+            let uint8: UInt8?
+            let uint16: UInt16?
+            let uint32: UInt32?
+            let uint64: UInt64?
+        }
+
+        let json = """
+        {
+            "int": 1,
+            "int8": 1,
+            "int16": 1,
+            "int32": 1,
+            "int64": 1,
+            "uint": 1,
+            "uint8": 1,
+            "uint16": 1,
+            "uint32": 1,
+            "uint64": 1
+        }
+        """
+
+        let result1 = runTestWithDecoder(CoercingJSONDecoder(), json: json, type: TestStruct.self)
+        let result2 = runTestWithDecoder(JSONDecoder(), json: json, type: TestStruct.self)
+        XCTAssertEqual(result1, result2)
     }
 
     func testDoubles() {
