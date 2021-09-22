@@ -5,7 +5,7 @@
 import Combine
 import Foundation
 
-class CoercingJSONDecoder {
+public class CoercingJSONDecoder {
     public enum DateDecodingStrategy {
         case deferredToDate
         case secondsSince1970
@@ -40,13 +40,13 @@ class CoercingJSONDecoder {
 ////        case custom((Decoder) throws -> Date)
 //    }
 
-    var dateDecodingStrategy: DateDecodingStrategy = .deferredToDate
-    var dataDecodingStrategy: DataDecodingStrategy = .base64
-    var nonConformingFloatDecodingStrategy: NonConformingFloatDecodingStrategy = .throw
-    var keyDecodingStrategy: KeyDecodingStrategy = .useDefaultKeys
+    public var dateDecodingStrategy: DateDecodingStrategy = .deferredToDate
+    public var dataDecodingStrategy: DataDecodingStrategy = .base64
+    public var nonConformingFloatDecodingStrategy: NonConformingFloatDecodingStrategy = .throw
+    public var keyDecodingStrategy: KeyDecodingStrategy = .useDefaultKeys
 //    var boolDecodingStrategy: BoolDecodingStrategy = .deferredToBool
 
-    var userInfo: [CodingUserInfoKey : Any] = [:]
+    public var userInfo: [CodingUserInfoKey : Any] = [:]
 
     public init() {
     }
