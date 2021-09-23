@@ -48,6 +48,10 @@ public class CoercingJSONDecoder {
 
     public var userInfo: [CodingUserInfoKey : Any] = [:]
 
+    internal var iso8601DateFormatter: ISO8601DateFormatter = {
+        return ISO8601DateFormatter()
+    }()
+
     public init() {
     }
 
