@@ -64,8 +64,41 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
         }
     }
 
+    func decodeIfPresent(_ type: String.Type, forKey key: Key) throws -> String? {
+        guard let value = value(for: key), value != nil else {
+            return nil
+        }
+
+        if let stringValue = value as? String {
+
+            guard stringValue.lowercased() != "null" else {
+                return nil
+            }
+            return stringValue
+        }
+
+        if let stringArrayValue = value as? [String], stringArrayValue.count == 1 {
+            return stringArrayValue.first
+        }
+
+        if let convertibleValue = value as? CustomStringConvertible, convertibleValue.description != "<null>" {
+            return convertibleValue.description
+        }
+
+        if let objectValue = value as? NSObject, objectValue.description != "<null>" {
+            return objectValue.description
+        }
+
+        return nil
+    }
+
     func decode(_ type: String.Type, forKey key: Key) throws -> String {
-        fatalError("\(#function)")
+        if let stringValue = try decodeIfPresent(type, forKey: key) {
+            return stringValue
+        } else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
+            throw DecodingError.typeMismatch(type, context)
+        }
     }
 
     func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
@@ -212,8 +245,64 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
 //        return try T(from: documentDecoder)
     }
 
+    func decodeIfPresent<T>(_ type: T.Type, forKey key: Key) throws -> T? where T : Decodable {
+        switch type {
+        case is Date.Type:
+            if let doubleValue = try decodeIfPresent(Double.self, forKey: key) {
+                return Date(timeIntervalSince1970: doubleValue) as? T
+            }
+
+            guard let stringValue = try decodeIfPresent(String.self, forKey: key) else {
+                return nil
+            }
+
+            return decoder.iso8601DateFormatter.date(from: stringValue) as? T
+
+//            switch decoder.dateDecodingStrategy {
+//
+//            case .deferredToDate:
+//                let decoder = CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
+//                return try Date(from: decoder) as? T
+//
+//            case .secondsSince1970:
+//                fatalError(".secondsSince1970 is not implemented")
+//
+//            case .millisecondsSince1970:
+//                fatalError(".millisecondsSince1970 is not implemented")
+//
+//            case .iso8601:
+//                return decoder.iso8601DateFormatter.date(from: stringValue) as? T
+//
+//            case .formatted(let formatter):
+//                return formatter.date(from: stringValue) as? T
+//
+//            case .custom(let block):
+//                fatalError("Custom date decoding strategies are not implemented")
+//
+//            }
+//
+//            return nil
+
+        default:
+            guard let value = value(for: key), value != nil else {
+                return nil
+            }
+
+            let documentDecoder = CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
+            return try T(from: documentDecoder)
+        }
+    }
+
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T : Decodable {
         switch type {
+        case is Date.Type:
+            if let dateValue = try decodeIfPresent(type, forKey: key) {
+                return dateValue
+            } else {
+                let context = DecodingError.Context(codingPath: codingPath + [key], debugDescription: "Expected \(String(describing: type)) value")
+                throw DecodingError.typeMismatch(type, context)
+            }
+
 //        case is URL.Type:
 //            let string = try unbox(String.self, forKey: key)
 //
