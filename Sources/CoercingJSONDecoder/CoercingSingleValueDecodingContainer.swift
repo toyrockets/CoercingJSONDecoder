@@ -40,7 +40,23 @@ internal struct CoercingJSONSingleValueDecodingContainer: SingleValueDecodingCon
     }
 
     func decode(_ type: Double.Type) throws -> Double {
-        fatalError("\(#function)")
+        guard let value = value else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
+            throw DecodingError.keyNotFound(codingPath.last!, context)
+        }
+
+        if let double = value as? Double {
+            return double
+        } else if let string = value as? String {
+            if let double = Double(string) {
+                return double
+            } else {
+                throw DecodingError.dataCorruptedError(in: self, debugDescription: "\(string) is not a valid \(String(describing: type)) value")
+            }
+        } else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
+            throw DecodingError.typeMismatch(type, context)
+        }
     }
 
     func decode(_ type: Float.Type) throws -> Float {

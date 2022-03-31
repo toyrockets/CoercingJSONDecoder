@@ -205,6 +205,135 @@ final class DictionaryTests: XCTestCase {
 
     }
 
+    func testDateDecodingByDeferringToDate() {
+        struct TestStruct: Decodable, Equatable {
+            let date: Date
+        }
+
+        let json = """
+        {
+            "date": 1648749012
+        }
+        """
+
+        let coercingDecoder = CoercingJSONDecoder()
+        coercingDecoder.dateDecodingStrategy = .deferredToDate
+        let result1 = runTestWithDecoder(coercingDecoder, json: json, type: TestStruct.self)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .deferredToDate
+        let result2 = runTestWithDecoder(decoder, json: json, type: TestStruct.self)
+
+        XCTAssertEqual(result1, result2)
+    }
+
+    func testDateDecodingWithSecondsSince1970Strategy() {
+        struct TestStruct: Decodable, Equatable {
+            let date: Date
+        }
+
+        let json = """
+        {
+            "date": 1648749012
+        }
+        """
+
+        let coercingDecoder = CoercingJSONDecoder()
+        coercingDecoder.dateDecodingStrategy = .secondsSince1970
+        let result1 = runTestWithDecoder(coercingDecoder, json: json, type: TestStruct.self)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        let result2 = runTestWithDecoder(decoder, json: json, type: TestStruct.self)
+
+        XCTAssertEqual(result1, result2)
+    }
+
+    func testDateDecodingWithMillisecondsSince1970Strategy() {
+        struct TestStruct: Decodable, Equatable {
+            let date: Date
+        }
+
+        let json = """
+        {
+            "date": 1648749012000
+        }
+        """
+
+        let coercingDecoder = CoercingJSONDecoder()
+        coercingDecoder.dateDecodingStrategy = .millisecondsSince1970
+        let result1 = runTestWithDecoder(coercingDecoder, json: json, type: TestStruct.self)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let result2 = runTestWithDecoder(decoder, json: json, type: TestStruct.self)
+
+        XCTAssertEqual(result1, result2)
+    }
+
+    func testDateDecodingWithISO8601Strategy() {
+        struct TestStruct: Decodable, Equatable {
+            let date: Date
+        }
+
+        let json = """
+        {
+            "date": "2022-03-31T10:54:00Z"
+        }
+        """
+
+        let coercingDecoder = CoercingJSONDecoder()
+        coercingDecoder.dateDecodingStrategy = .iso8601
+        let result1 = runTestWithDecoder(coercingDecoder, json: json, type: TestStruct.self)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let result2 = runTestWithDecoder(decoder, json: json, type: TestStruct.self)
+
+        XCTAssertEqual(result1, result2)
+    }
+
+    func testDateDecodingWithCustomDateStrategy() {
+        struct TestStruct: Decodable, Equatable {
+            let date: Date
+        }
+
+        let json = """
+        {
+            "date": "2022-03-31 10:54:00"
+        }
+        """
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withSpaceBetweenDateAndTime, .withFullDate, .withFullTime]
+
+        let customDateDecodingBlock: (Decoder) throws -> Date = { decoder in
+            let container = try decoder.singleValueContainer()
+            var dateString = try container.decode(String.self)
+
+            if !dateString.hasSuffix("Z") {
+                dateString += "Z"
+            }
+
+            if let date = formatter.date(from: dateString) {
+                return date
+            } else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
+            }
+        }
+
+        let coercingDecoder = CoercingJSONDecoder()
+        coercingDecoder.dateDecodingStrategy = .custom(customDateDecodingBlock)
+
+        let result1 = runTestWithDecoder(coercingDecoder, json: json, type: TestStruct.self)
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom(customDateDecodingBlock)
+        let result2 = runTestWithDecoder(decoder, json: json, type: TestStruct.self)
+
+        XCTAssertEqual(result1, result2)
+    }
+
     func testCustomDecodeables() {
         struct TestStruct: Decodable, Equatable {
             enum Status: String, Decodable, Equatable {

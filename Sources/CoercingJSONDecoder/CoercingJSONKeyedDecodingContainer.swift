@@ -248,40 +248,61 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
     func decodeIfPresent<T>(_ type: T.Type, forKey key: Key) throws -> T? where T : Decodable {
         switch type {
         case is Date.Type:
-            if let doubleValue = try decodeIfPresent(Double.self, forKey: key) {
-                return Date(timeIntervalSince1970: doubleValue) as? T
-            }
-
-            guard let stringValue = try decodeIfPresent(String.self, forKey: key) else {
+            guard let value = value(for: key), value != nil else {
                 return nil
             }
 
-            return decoder.iso8601DateFormatter.date(from: stringValue) as? T
+            // if let doubleValue = try decodeIfPresent(Double.self, forKey: key) {
+            //     return Date(timeIntervalSince1970: doubleValue) as? T
+            // }
+            //
+            // guard let stringValue = try decodeIfPresent(String.self, forKey: key) else {
+            //     return nil
+            // }
+            //
+            // return decoder.iso8601DateFormatter.date(from: stringValue) as? T
 
-//            switch decoder.dateDecodingStrategy {
-//
-//            case .deferredToDate:
-//                let decoder = CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
-//                return try Date(from: decoder) as? T
-//
-//            case .secondsSince1970:
-//                fatalError(".secondsSince1970 is not implemented")
-//
-//            case .millisecondsSince1970:
-//                fatalError(".millisecondsSince1970 is not implemented")
-//
-//            case .iso8601:
-//                return decoder.iso8601DateFormatter.date(from: stringValue) as? T
-//
-//            case .formatted(let formatter):
-//                return formatter.date(from: stringValue) as? T
-//
-//            case .custom(let block):
-//                fatalError("Custom date decoding strategies are not implemented")
-//
-//            }
-//
-//            return nil
+           switch decoder.dateDecodingStrategy {
+
+           case .deferredToDate:
+               let decoder = CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
+               return try Date(from: decoder) as? T
+
+           case .secondsSince1970:
+               if let doubleValue = try decodeIfPresent(Double.self, forKey: key) {
+                   return Date(timeIntervalSince1970: doubleValue) as? T
+               } else {
+                   return nil
+               }
+
+           case .millisecondsSince1970:
+               if let doubleValue = try decodeIfPresent(Double.self, forKey: key) {
+                   return Date(timeIntervalSince1970: doubleValue / 1000) as? T
+               } else {
+                   return nil
+               }
+
+           case .iso8601:
+               if let stringValue = try decodeIfPresent(String.self, forKey: key) {
+                   return decoder.iso8601DateFormatter.date(from: stringValue) as? T
+               } else {
+                   return nil
+               }
+
+           case .formatted(let formatter):
+               if let stringValue = try decodeIfPresent(String.self, forKey: key) {
+                   return formatter.date(from: stringValue) as? T
+               } else {
+                   return nil
+               }
+
+           case .custom(let block):
+               let decoder = CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
+               return try block(decoder) as? T
+
+           }
+
+           return nil
 
         default:
             guard let value = value(for: key), value != nil else {
