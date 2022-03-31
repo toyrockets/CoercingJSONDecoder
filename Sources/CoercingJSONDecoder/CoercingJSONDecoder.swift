@@ -40,7 +40,7 @@ public class CoercingJSONDecoder {
 ////        case custom((Decoder) throws -> Date)
 //    }
 
-    public var dateDecodingStrategy: DateDecodingStrategy = .deferredToDate
+    public var dateDecodingStrategies: [DateDecodingStrategy] = [.deferredToDate]
     public var dataDecodingStrategy: DataDecodingStrategy = .base64
     public var nonConformingFloatDecodingStrategy: NonConformingFloatDecodingStrategy = .throw
     public var keyDecodingStrategy: KeyDecodingStrategy = .useDefaultKeys
