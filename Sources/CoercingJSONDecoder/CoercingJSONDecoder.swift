@@ -34,17 +34,10 @@ public class CoercingJSONDecoder {
         case custom(([CodingKey]) -> CodingKey)
     }
 
-//    public enum BoolDecodingStrategy {
-//        case deferredToBool
-//        case trueValues(Set<String>)
-////        case custom((Decoder) throws -> Date)
-//    }
-
     public var dateDecodingStrategies: [DateDecodingStrategy] = [.deferredToDate]
     public var dataDecodingStrategy: DataDecodingStrategy = .base64
     public var nonConformingFloatDecodingStrategy: NonConformingFloatDecodingStrategy = .throw
     public var keyDecodingStrategy: KeyDecodingStrategy = .useDefaultKeys
-//    var boolDecodingStrategy: BoolDecodingStrategy = .deferredToBool
 
     public var userInfo: [CodingUserInfoKey : Any] = [:]
 

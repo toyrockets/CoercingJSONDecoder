@@ -124,9 +124,6 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
     // MARK: - Integer decoding
 
     private func decodeIntegerIfPresent<T: FixedWidthInteger>(_ type: T.Type, forKey key: Key) throws -> T? {
-//        if try decodeNil(forKey: key) {
-//            return nil
-//        }
 
         guard let value = value(for: key), value != nil else {
             return nil
@@ -237,30 +234,12 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
         try decodeInteger(type, forKey: key)
     }
 
-    // MARK: - Other decoding
-
-    func decode<T: Collection & Decodable>(_ type: T.Type, forKey key: Key) throws -> T where T.Element: Decodable {
-        fatalError("\(#function)")
-//        let documentDecoder = CoercingJSONDocumentDecoder(decoder: decoder, node: node, codingPath: codingPath + [key], userInfo: userInfo)
-//        return try T(from: documentDecoder)
-    }
-
     func decodeIfPresent<T>(_ type: T.Type, forKey key: Key) throws -> T? where T : Decodable {
         switch type {
         case is Date.Type:
             guard let value = value(for: key), value != nil else {
                 return nil
             }
-
-            // if let doubleValue = try decodeIfPresent(Double.self, forKey: key) {
-            //     return Date(timeIntervalSince1970: doubleValue) as? T
-            // }
-            //
-            // guard let stringValue = try decodeIfPresent(String.self, forKey: key) else {
-            //     return nil
-            // }
-            //
-            // return decoder.iso8601DateFormatter.date(from: stringValue) as? T
 
             for dateDecodingStrategy in decoder.dateDecodingStrategies {
                 switch dateDecodingStrategy {
@@ -321,25 +300,6 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
                 throw DecodingError.typeMismatch(type, context)
             }
 
-//        case is URL.Type:
-//            let string = try unbox(String.self, forKey: key)
-//
-//            let characterSet = CharacterSet.whitespacesAndNewlines.inverted
-//            let unescapedString = string.removingPercentEncoding?.addingPercentEncoding(withAllowedCharacters: characterSet)
-//            if let unescapedString = unescapedString, let url = URL(string: unescapedString) as? T {
-//                return url
-//            } else {
-//                throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "Invalid URL string: \(string)")
-//            }
-//        case is Decimal.Type:
-//            let string = try unbox(String.self, forKey: key)
-//
-//            if let decimalValue = Decimal(string: string) as? T {
-//                return decimalValue
-//            } else {
-//                throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "Invalid decimal string: \(string)")
-//            }
-//
         default:
             guard let value = value(for: key) else {
                 throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "Missing node for key: \(key)")
@@ -352,23 +312,10 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
         fatalError("\(#function)")
-//        guard let node = node(for: key) else {
-//            throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "Missing node for key: \(key)")
-//        }
-//
-//        return KeyedDecodingContainer(CoercingJSONKeyedDecodingContainer<NestedKey>(node: node, decoder: decoder, codingPath: [key], userInfo: userInfo))
-
-//        return KeyedDecodingContainer(CoercingJSONKeyedDecodingContainer<NestedKey>(node: node, decoder: decoder, codingPath: [key], userInfo: userInfo, cachedIndexes: cachedIndexes, lastCachedIndex: lastCachedIndex))
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
         fatalError("\(#function)")
-
-//        guard let node = node(for: key) else {
-//            throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "Missing node for key: \(key)")
-//        }
-//
-//        return CoercingJSONUnkeyedDecodingContainer(decoder: decoder, node: node, codingPath: codingPath + [key], userInfo: userInfo)
     }
 
     func superDecoder() throws -> Decoder {

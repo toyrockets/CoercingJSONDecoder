@@ -33,26 +33,6 @@ internal class CoercingJSONUnkeyedDecodingContainer: UnkeyedDecodingContainer {
 
     func decode(_ type: Bool.Type) throws -> Bool {
         fatalError("\(#function)")
-
-//        precondition(node.pointee.type == yajl_t_array)
-//
-//        guard let node = node.pointee.u.array.values[currentIndex] else {
-//            let key = _JSONKey(intValue: currentIndex)!
-//            let context = DecodingError.Context(codingPath: codingPath + [key], debugDescription: "Could not find \(key)")
-//            throw DecodingError.valueNotFound(type, context)
-//        }
-//
-//        if node.pointee.type == yajl_t_true {
-//            currentIndex += 1
-//            return true
-//        } else if node.pointee.type == yajl_t_false {
-//            currentIndex += 1
-//            return false
-//        } else {
-//            let type = Bool.self
-//            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode \(String(describing: type)) but found a \(node.pointee.type.description) instead.")
-//            throw DecodingError.typeMismatch(type, context)
-//        }
     }
 
     func decode(_ type: String.Type) throws -> String {
