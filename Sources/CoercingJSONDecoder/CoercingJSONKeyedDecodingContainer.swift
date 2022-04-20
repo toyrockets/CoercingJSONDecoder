@@ -7,7 +7,7 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
     var codingPath: [CodingKey]
     var userInfo: [CodingUserInfoKey : Any]
 
-    init(value: [String: Any?], decoder: CoercingJSONDecoder, codingPath: [CodingKey], userInfo: [CodingUserInfoKey: Any], lastCachedIndex: Int = -1) {
+    init(value: [String: Any?], decoder: CoercingJSONDecoder, codingPath: [Key], userInfo: [CodingUserInfoKey: Any], lastCachedIndex: Int = -1) {
         self.value = value
         self.decoder = decoder
         self.codingPath = codingPath
@@ -49,6 +49,30 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
 
         return value == nil
     }
+
+    private func decodeLosslessStringConvertibleTypeIfPresent<T: LosslessStringConvertible>(_ type: T.Type, forKey key: Key) throws -> T? {
+        guard let value = value(for: key) else {
+            return nil
+        }
+
+        if let double = value as? T {
+            return double
+        } else if let string = value as? String {
+            return T(string)
+        } else {
+            return nil
+        }
+    }
+
+    private func decodeLosslessStringConvertibleType<T: LosslessStringConvertible>(_ type: T.Type, forKey key: Key) throws -> T {
+        if let value = try decodeLosslessStringConvertibleTypeIfPresent(type, forKey: key) {
+            return value
+        } else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
+            throw DecodingError.typeMismatch(type, context)
+        }
+    }
+
 
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
         guard let value = value(for: key) else {
@@ -93,32 +117,15 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
     }
 
     func decode(_ type: String.Type, forKey key: Key) throws -> String {
-        if let stringValue = try decodeIfPresent(type, forKey: key) {
-            return stringValue
-        } else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.typeMismatch(type, context)
-        }
+        return try decodeLosslessStringConvertibleType(type, forKey: key)
     }
 
     func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
-        guard let value = value(for: key) else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.keyNotFound(key, context)
-        }
-
-        if let doubleValue = value as? Double {
-            return doubleValue
-        } else if let stringValue = value as? String, let doubleValue = Double(stringValue) {
-            return doubleValue
-        } else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.typeMismatch(type, context)
-        }
+        return try decodeLosslessStringConvertibleType(type, forKey: key)
     }
 
     func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
-        fatalError("\(#function)")
+        return try decodeLosslessStringConvertibleType(type, forKey: key)
     }
 
     // MARK: - Integer decoding
@@ -311,20 +318,35 @@ internal class CoercingJSONKeyedDecodingContainer<Key: CodingKey>: KeyedDecoding
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
-        fatalError("\(#function)")
+
+        guard let dictionary = value(for: key) as? [String: Any?] else {
+            let expectedType = Dictionary<String, Any?>.self
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode \(String(describing: expectedType)) but found a \(Swift.type(of: value)) instead.")
+            throw DecodingError.typeMismatch(expectedType, context)
+        }
+
+        let fop = (self.codingPath + [key]).compactMap({ NestedKey(stringValue: $0.stringValue) })
+        let container = CoercingJSONKeyedDecodingContainer<NestedKey>(value: dictionary, decoder: decoder, codingPath: fop, userInfo: userInfo)
+        return KeyedDecodingContainer(container)
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
-        fatalError("\(#function)")
+
+        guard let value = value(for: key) as? [Any?] else {
+            let expectedType = Array<Any>.self
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode \(String(describing: expectedType)) but found a \(type(of: value)) instead.")
+            throw DecodingError.typeMismatch(expectedType, context)
+        }
+
+        let codingPath = self.codingPath.compactMap({ Key(stringValue: $0.stringValue) })
+        return CoercingJSONUnkeyedDecodingContainer(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
     }
 
     func superDecoder() throws -> Decoder {
-        fatalError("\(#function)")
+        return CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath, userInfo: userInfo)
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
-        fatalError("\(#function)")
+        return CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath + [key], userInfo: userInfo)
     }
-
-
 }

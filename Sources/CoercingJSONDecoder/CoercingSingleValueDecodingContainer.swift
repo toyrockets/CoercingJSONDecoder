@@ -1,6 +1,8 @@
 
 import Foundation
 
+import Foundation
+
 internal struct CoercingJSONSingleValueDecodingContainer: SingleValueDecodingContainer {
     var decoder: CoercingJSONDecoder
     var value: Any?
@@ -12,99 +14,118 @@ internal struct CoercingJSONSingleValueDecodingContainer: SingleValueDecodingCon
     }
 
     func decode(_ type: Bool.Type) throws -> Bool {
-        guard let value = value else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.keyNotFound(codingPath.last!, context)
-        }
-
-        if let boolValue = value as? Bool {
-            return boolValue
-        } else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.typeMismatch(type, context)
-        }
+        return try decodeLosslessStringConvertibleType(type)
     }
 
     func decode(_ type: String.Type) throws -> String {
-        guard let value = value else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.keyNotFound(codingPath.last!, context)
-        }
-
-        if let string = value as? String {
-            return string
-        } else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.typeMismatch(type, context)
-        }
+        return try decodeLosslessStringConvertibleType(type)
     }
 
     func decode(_ type: Double.Type) throws -> Double {
+        return try decodeLosslessStringConvertibleType(type)
+    }
+
+    func decode(_ type: Float.Type) throws -> Float {
+        return try decodeLosslessStringConvertibleType(type)
+    }
+
+    func decode(_ type: Int.Type) throws -> Int {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: Int8.Type) throws -> Int8 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: Int16.Type) throws -> Int16 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: Int32.Type) throws -> Int32 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: Int64.Type) throws -> Int64 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: UInt.Type) throws -> UInt {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: UInt8.Type) throws -> UInt8 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: UInt16.Type) throws -> UInt16 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: UInt32.Type) throws -> UInt32 {
+        return try decodeInteger(type)
+    }
+
+    func decode(_ type: UInt64.Type) throws -> UInt64 {
+        return try decodeInteger(type)
+    }
+
+    func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
+        let documentDecoder = CoercingJSONDocumentDecoder(decoder: decoder, value: value, codingPath: codingPath, userInfo: userInfo)
+        return try T(from: documentDecoder)
+    }
+
+    private func decodeLosslessStringConvertibleTypeIfPresent<T: LosslessStringConvertible>(_ type: T.Type) throws -> T? {
         guard let value = value else {
-            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
-            throw DecodingError.keyNotFound(codingPath.last!, context)
+            return nil
         }
 
-        if let double = value as? Double {
+        if let double = value as? T {
             return double
         } else if let string = value as? String {
-            if let double = Double(string) {
-                return double
-            } else {
-                throw DecodingError.dataCorruptedError(in: self, debugDescription: "\(string) is not a valid \(String(describing: type)) value")
-            }
+            return T(string)
+        } else {
+            return nil
+        }
+    }
+
+    private func decodeLosslessStringConvertibleType<T: LosslessStringConvertible>(_ type: T.Type) throws -> T {
+        if let value = try decodeLosslessStringConvertibleTypeIfPresent(type) {
+            return value
         } else {
             let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
             throw DecodingError.typeMismatch(type, context)
         }
     }
 
-    func decode(_ type: Float.Type) throws -> Float {
-        fatalError("\(#function)")
+    private func decodeIntegerIfPresent<T: FixedWidthInteger>(_ type: T.Type) throws -> T? {
+
+        guard let value = value else {
+            return nil
+        }
+
+        if let intValue = value as? T {
+            return intValue
+        } else if let stringValue = value as? String {
+
+            if let intValue = T(stringValue) {
+                return intValue
+            } else if let doubleValue = Double(stringValue) {
+                return T(exactly: doubleValue)
+            } else {
+                return nil
+            }
+        } else {
+            return nil
+        }
     }
 
-    func decode(_ type: Int.Type) throws -> Int {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: Int8.Type) throws -> Int8 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: Int16.Type) throws -> Int16 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: Int32.Type) throws -> Int32 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: Int64.Type) throws -> Int64 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: UInt.Type) throws -> UInt {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: UInt8.Type) throws -> UInt8 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: UInt16.Type) throws -> UInt16 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: UInt32.Type) throws -> UInt32 {
-        fatalError("\(#function)")
-    }
-
-    func decode(_ type: UInt64.Type) throws -> UInt64 {
-        fatalError("\(#function)")
-    }
-
-    func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        fatalError("\(#function)")
+    private func decodeInteger<T: FixedWidthInteger & Decodable>(_ type: T.Type) throws -> T {
+        if let intValue = try decodeIntegerIfPresent(type) {
+            return intValue
+        } else {
+            let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Expected \(String(describing: type)) value")
+            throw DecodingError.typeMismatch(type, context)
+        }
     }
 }
 

@@ -3,7 +3,7 @@ import XCTest
 @testable import CoercingJSONDecoder
 
 final class CoercionTests: XCTestCase {
-    func testIntegerCoercion() {
+    func testKeyedIntegerCoercion() {
         struct TestStruct: Decodable, Equatable {
             let one: Int?
             let two: Int?
@@ -49,6 +49,30 @@ final class CoercionTests: XCTestCase {
         XCTAssertEqual(result.ten, nil)
     }
 
+    func testUnkeyedIntegerCoercion() {
+        let json = """
+        [
+            1,
+            "2",
+            3.0,
+            3.1,
+            "3.0",
+            "3.1",
+            true,
+            "invalid",
+            [],
+            {}
+        ]
+        """
+
+        guard let result = runTestWithDecoder(CoercingJSONDecoder(), json: json, type: [Int?].self) else {
+            XCTFail("Failed to decode data")
+            return
+        }
+
+        XCTAssertEqual(result, [1, 2, 3, nil, 3, nil, 1, nil, nil, nil])
+    }
+
     func testDoubleCoercion() {
 
         struct TestStruct: Decodable, Equatable {
@@ -77,4 +101,29 @@ final class CoercionTests: XCTestCase {
         XCTAssertEqual(result.c, 3.14)
         XCTAssertEqual(result.d, 3.14)
     }
+
+    func testUnkeyedDoubleCoercion() {
+        let json = """
+        [
+            1,
+            "2",
+            3.0,
+            3.1,
+            "3.0",
+            "3.1",
+            true,
+            "invalid",
+            [],
+            {}
+        ]
+        """
+
+        guard let result = runTestWithDecoder(CoercingJSONDecoder(), json: json, type: [Double?].self) else {
+            XCTFail("Failed to decode data")
+            return
+        }
+
+        XCTAssertEqual(result, [1, 2, 3.0, 3.1, 3.0, 3.1, 1, nil, nil, nil])
+    }
+
 }

@@ -28,6 +28,7 @@ internal final class CoercingJSONDocumentDecoder: Decoder {
             throw DecodingError.typeMismatch(expectedType, context)
         }
 
+        let codingPath = self.codingPath.compactMap({ Key(stringValue: $0.stringValue) })
         return KeyedDecodingContainer(CoercingJSONKeyedDecodingContainer(value: dictionary, decoder: decoder, codingPath: codingPath, userInfo: userInfo))
     }
 
